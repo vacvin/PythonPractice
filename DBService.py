@@ -42,11 +42,13 @@ def insert(name, birthday):
     c = conn.cursor()
     c.execute(sqlstr, (getMaxId() + 1, name, birthday))
     conn.commit()
+    return c.lastrowid
 
 def update(id, name, birthday):
     sqlstr = "UPDATE {table} SET name = ?, birthday = ? WHERE id = ?;".format(table = tableName)
     c = conn.cursor()
-    c.execute(sqlstr, (name, birthday, id))    
+    c.execute(sqlstr, (name, birthday, id))
+    conn.commit()
     return c.fetchone()
 
 def delete(id):
