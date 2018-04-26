@@ -1,6 +1,15 @@
 import sqlite3
 global conn
 global tableName
+global tableFieldDefine
+
+tableFieldDefine = {
+    'User' : {
+        'Define' : 'id int, name text, birthday text, createTime text',
+        'Insert' : '?, ?, ?, date(\'now\')',
+        'Update' : 'name = ?, birthday = ? WHERE id = ?'
+    }
+}
 
 #region DB Control
 def checkTableReady():
@@ -8,11 +17,12 @@ def checkTableReady():
     c = conn.cursor()
     c.execute(sqlstr)
     result = c.fetchone()
-    if result == None:
-        sqlstr = "CREATE TABLE {table} (id int, name text, birthday text, createTime text);".format(table = tableName)
+    if result == None:     
+        sqlstr = "CREATE TABLE {table} ({fields}});".format(table = tableName, fields = tableFieldDefine[tableName]['Define'])
         c.execute(sqlstr)
 
 def getMaxId():
+    checkTableReady()
     maxId = 0
     sqlstr = "SELECT max(id) FROM {table};".format(table = tableName)
     c = conn.cursor()
@@ -26,32 +36,37 @@ def getMaxId():
     return maxId
 
 def select_All():
+    checkTableReady()
     sqlstr = "SELECT * FROM {table};".format(table = tableName)
     c = conn.cursor()
     c.execute(sqlstr)
     return c.fetchall()
 
 def select_By_ID(id):
+    checkTableReady()
     sqlstr = "SELECT * FROM {table} WHERE id = ?;".format(table = tableName)
     c = conn.cursor()
     c.execute(sqlstr, str(id))
     return c.fetchone()
 
-def insert(name, birthday):
-    sqlstr = "INSERT INTO {table} VALUES (?, ?, ?, date('now'))".format(table = tableName)
+def insert(values):
+    checkTableReady()    
+    sqlstr = "INSERT INTO {table} VALUES ({fields})".format(table = tableName, fields = tableFieldDefine[tableName]['Insert'])
     c = conn.cursor()
-    c.execute(sqlstr, (getMaxId() + 1, name, birthday))
+    c.execute(sqlstr, (getMaxId() + 1,) + tuple(values))
     conn.commit()
     return c.lastrowid
 
-def update(id, name, birthday):
-    sqlstr = "UPDATE {table} SET name = ?, birthday = ? WHERE id = ?;".format(table = tableName)
+def update(id, values):
+    checkTableReady()
+    sqlstr = "UPDATE {table} SET {fields};".format(table = tableName, fields = tableFieldDefine[tableName]['Update'])
     c = conn.cursor()
-    c.execute(sqlstr, (name, birthday, id))
+    c.execute(sqlstr, tuple(values) + (id,))
     conn.commit()
     return c.fetchone()
 
 def delete(id):
+    checkTableReady()
     sqlstr = "DELETE FROM {table} WHERE id = ?;".format(table = tableName)
     c = conn.cursor()
     c.execute(sqlstr, str(id))
